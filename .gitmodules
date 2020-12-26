@@ -1,0 +1,12 @@
+[submodule "polling-service"]
+	path = polling-service
+	url = git@github.com:meta-coders/wiki-analyzer-polling-service.git
+[submodule "statistic-delivery-service"]
+	path = statistic-delivery-service
+	url = git@github.com:meta-coders/wiki-analyzer-statistic-delivery-service.git
+[submodule "recent-changes-service"]
+	path = recent-changes-service
+	url = git@github.com:meta-coders/wiki-analyzer-recent-changes-service.git
+[submodule "statistic-collector-service"]
+	path = statistic-collector-service
+	url = git@github.com:meta-coders/wiki-analyzer-statistic-collector-service.git
