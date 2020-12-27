@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  polling-service:
+    image: wiki-analyzer/polling
+    build: ./polling-service
+    environment:
+      - PORT=3000
+      - FASTIFY_LOG_LEVEL=info
+      - WIKI_API=https://stream.wikimedia.org/v2/stream/recentchange
+    networks:
+      - wiki-polling-net
+
+  timescale:
+    image: timescale/timescaledb:2.0.0-pg12
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    networks:
+      - statistic-net
+    volumes:
+      - ./statistic-delivery-service/sql:/docker-entrypoint-initdb.d
+      - timescale-data:/var/lib/postgresql/data
+
+  statistic-collector-service:
+    image: wiki-analyzer/statistic-collector
+    build: ./statistic-collector-service
+    depends_on:
+      - polling-service
+      - timescale
+    environment:
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGDATABASE=wikistatistic
+      - PGPORT=5432
+      - PGHOST=timescale
+      - RECENT_CHANGES_API_URL=ws://polling-service:3000/detailed-recent-changes
+    networks:
+      - wiki-polling-net
+      - statistic-net
+
+  recent-changes-service:
+    image: wiki-analyzer/recent-changes
+    build: ./recent-changes-service
+    depends_on:
+      - polling-service
+    environment:
+      - PORT=3000
+      - FASTIFY_LOG_LEVEL=info
+      - POLLING_SERVICE=polling-service:3000
+    networks:
+      - wiki-polling-net
+      - proxy-net
+
+  statistic-delivery-service:
+    image: wiki-analyzer/statistic-delivery
+    build: ./statistic-delivery-service
+    depends_on:
+      - timescale
+    environment:
+      - DB_URL=postgres://postgres:postgres@timescale:5432/wikistatistic
+    networks:
+      - proxy-net
+      - statistic-net
+
+  nginx-proxy:
+    image: wiki-analyzer/nginx-proxy
+    build: ./nginx-proxy
+    depends_on:
+      - recent-changes-service
+      - statistic-delivery-service
+    networks:
+      - proxy-net
+    ports:
+      - 80:80
+
+networks:
+  wiki-polling-net:
+  proxy-net:
+  statistic-net:
+
+volumes:
+  timescale-data:
