@@ -15,6 +15,7 @@ services:
     image: timescale/timescaledb:2.0.0-pg12
     environment:
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=wikistatistic
     networks:
       - statistic-net
     volumes:
@@ -58,6 +59,7 @@ services:
       - timescale
     environment:
       - DB_URL=postgres://postgres:postgres@timescale:5432/wikistatistic
+      - PORT=3000
     networks:
       - proxy-net
       - statistic-net
